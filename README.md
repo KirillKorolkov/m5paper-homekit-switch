@@ -6,15 +6,21 @@ HomeKit Programmable Switch for the [M5Paper](https://docs.m5stack.com/en/core/m
 
 # Features
 
+work in progress
 ...
 
 # Screenshots
 
+<details>
+
+<summary>Click me</summary>
+
 ![Screenshot1](./images/screen1.png "M5Paper HomeKit Switch Screenshot1")
 ![Screenshot2](./images/screen2.png "M5Paper HomeKit Switch Screenshot2")
-
 ![Screenshot3](./images/screen3.png "M5Paper HomeKit Switch Screenshot3")
 ![Screenshot4](./images/screen4.png "M5Paper HomeKit Switch Screenshot4")
+
+</details>
 
 # Requirement
 

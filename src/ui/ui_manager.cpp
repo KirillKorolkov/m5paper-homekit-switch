@@ -24,6 +24,8 @@
 
 #include "ui_manager.h"
 
+#include "../info_ui.h"
+
 #include "../resources/binary_font.h"
 #include "../resources/binary_image_home_kit_qr_code.h"
 #include "../resources/binary_image_thermometer.h"
@@ -36,9 +38,9 @@ const int screen_width = 540;
 const int screen_height = 960;
 
 M5EPD_Canvas canvas(&M5.EPD);
-M5EPD_Canvas canvas_notification(&M5.EPD);
+M5EPD_Canvas extra_canvas(&M5.EPD);
 
-ui_manager::ui_manager(system_util *SYS, hap_manager *HAP)
+ui_manager::ui_manager(system_utils *SYS, hap_manager *HAP)
 {
     SYS_ = SYS;
     HAP_ = HAP;
@@ -51,45 +53,43 @@ void ui_manager::initialize()
     M5.EPD.SetRotation(90);
     M5.EPD.Clear(true);
 
-    canvas.createCanvas(screen_width, screen_height - 48);
+    canvas.createCanvas(screen_width, screen_height);
     canvas.loadFont(binary_font, sizeof(binary_font));
     canvas.setTextDatum(TC_DATUM);
 
-    canvas_notification.createCanvas(screen_width, 48);
-    canvas_notification.loadFont(binary_font, sizeof(binary_font));
-    canvas_notification.setTextDatum(TC_DATUM);
+    extra_canvas.createCanvas(screen_width, 48);
+    extra_canvas.loadFont(binary_font, sizeof(binary_font));
+    extra_canvas.setTextDatum(TC_DATUM);
 
-    // top left
+    // switch 1
     create_button(52, 92, 192, 160, binary_image_button_top, binary_image_button_top_active);
     create_object(52, 252, 192, 60, binary_image_button_middle);
     create_button(52, 312, 192, 160, binary_image_button_bottom, binary_image_button_bottom_active);
+    create_label(145, 272, 22, 15, 256, switch_1_label);
 
-    // // top right
+    // switch 2
     create_button(296, 92, 192, 160, binary_image_button_top, binary_image_button_top_active);
     create_object(296, 252, 192, 60, binary_image_button_middle);
     create_button(296, 312, 192, 160, binary_image_button_bottom, binary_image_button_bottom_active);
+    create_label(395, 272, 22, 15, 256, switch_2_label);
 
-    // // bottom left
+    // switch 3
     create_button(52, 92 + 420, 192, 160, binary_image_button_top, binary_image_button_top_active);
     create_object(52, 252 + 420, 192, 60, binary_image_button_middle);
     create_button(52, 312 + 420, 192, 160, binary_image_button_bottom, binary_image_button_bottom_active);
+    create_label(145, 692, 22, 15, 256, switch_3_label);
 
-    // // bottom right
+    // switch 4
     create_button(296, 92 + 420, 192, 160, binary_image_button_top, binary_image_button_top_active);
     create_object(296, 252 + 420, 192, 60, binary_image_button_middle);
     create_button(296, 312 + 420, 192, 160, binary_image_button_bottom, binary_image_button_bottom_active);
-
-    // label (x, y, font_size, color, cache_size, title);
-    create_label(145, 272, 22, 15, 256, "Switch 1");
-    create_label(395, 272, 22, 15, 256, "Switch 2");
-    create_label(145, 692, 22, 15, 256, "Switch 3");
-    create_label(395, 692, 22, 15, 256, "Switch 4");
+    create_label(395, 692, 22, 15, 256, switch_4_label);
 }
 
 void ui_manager::switch_state(ui_state_t state)
 {
-    canvas.fillCanvas(0);
-    // canvas.pushCanvas(0, 0, UPDATE_MODE_GLD16);
+
+    canvas.clear();
 
     switch (state)
     {
@@ -295,24 +295,22 @@ void ui_manager::draw_state_sleep(m5epd_update_mode_t mode)
     canvas.drawCentreString("sleeping...", 270, 440, 2);
 
     canvas.pushCanvas(0, 0, mode);
-
-    canvas_notification.fillCanvas(0);
-    canvas_notification.pushCanvas(0, screen_height - 48, UPDATE_MODE_GL16);
 }
 
 void ui_manager::draw_state_deep_sleep(m5epd_update_mode_t mode)
 {
+    canvas.fillCanvas(0xFFFF);
+
     !canvas.isRenderExist(32) && canvas.createRender(32, 256);
 
     canvas.setTextSize(32);
-    canvas.setTextColor(15);
+    canvas.setTextColor(0);
 
     canvas.drawCentreString("sleeping...", 270, 440, 2);
 
     canvas.pushCanvas(0, 0, mode);
 
-    canvas_notification.fillCanvas(0);
-    canvas_notification.pushCanvas(0, screen_height - 48, UPDATE_MODE_GL16);
+    Serial.print("SLEEPING.... \n");
 }
 
 void ui_manager::draw_state_reset(m5epd_update_mode_t mode)
@@ -325,22 +323,31 @@ void ui_manager::draw_state_reset(m5epd_update_mode_t mode)
     canvas.drawCentreString("resetting...", 270, 440, 2);
 
     canvas.pushCanvas(0, 0, mode);
-
-    canvas_notification.fillCanvas(0);
-    canvas_notification.pushCanvas(0, screen_height - 48, UPDATE_MODE_GL16);
 }
 
-void ui_manager::draw_notification(String text)
+bool ui_manager::draw_notification(String text)
 {
-    canvas_notification.fillCanvas(0);
 
-    !canvas_notification.isRenderExist(22) && canvas_notification.createRender(22, 256);
+    if (is_touch_event_started)
+    {
+        return false;
+    }
 
-    canvas_notification.setTextSize(22);
-    canvas_notification.setTextColor(15);
+    Serial.print(text + "\n");
 
-    canvas_notification.drawRightString(text, screen_width - 16, 10, 1);
-    canvas_notification.pushCanvas(0, screen_height - 48, UPDATE_MODE_GL16);
+    extra_canvas.clear();
+
+    !extra_canvas.isRenderExist(22) && extra_canvas.createRender(22, 256);
+
+    extra_canvas.setTextSize(22);
+    extra_canvas.setTextColor(15);
+
+    extra_canvas.drawRightString(text, screen_width - 16, 0, 1);
+
+    M5.EPD.WritePartGram4bpp(0, screen_height - 48, screen_width, 48, (uint8_t *)extra_canvas.frameBuffer());
+    M5.EPD.UpdateArea(0, screen_height - 48, screen_width, 48, UPDATE_MODE_GLD16);
+
+    return true;
 }
 
 void ui_manager::draw_title(String title)

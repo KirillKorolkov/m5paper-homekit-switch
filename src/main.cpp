@@ -26,10 +26,11 @@
 
 #include "ui/ui_manager.h"
 #include "hap/hap_manager.h"
-#include "system/system_util.h"
-#include "info.h"
+#include "system/system_utils.h"
 
-system_util SYS;
+#include "info_wifi.h"
+
+system_utils SYS;
 hap_manager HAP;
 
 ui_manager UI(&SYS, &HAP);
@@ -42,7 +43,7 @@ time_t inactive_time = 0;
 time_t last_update_time = 0;
 
 const int sleep_interval = 150; // in seconds 150s - 2.5m
-const int refresh_interval = 60;
+const int refresh_interval = 5;
 
 ui_state_t currentState = IDLE;
 
@@ -50,7 +51,6 @@ void handle_wake_up()
 {
 
     Serial.print(SYS.get_wifi_connected_status());
-    Serial.printf("\n ");
 
     isAwake = false;
 }
@@ -104,22 +104,55 @@ void switch_state(ui_state_t nextState)
 
     if (nextState == SLEEP)
     {
-        delay(1000);
+        delay(500);
 
         SYS.sleep(handle_wake_up);
     }
 
     if (nextState == DEEP_SLEEP)
     {
-        delay(1000);
+        delay(500);
 
         SYS.deep_sleep();
     }
 
     if (nextState == RESET)
     {
+        delay(500);
+
         HAP.initialize(UI.get_buttons_count(), true);
         SYS.reboot();
+    }
+
+    last_update_time = SYS.get_time();
+}
+
+void update()
+{
+    if (get_inactivity_time() >= sleep_interval)
+    {
+        reset_inactivity_time();
+
+        switch_state(DEEP_SLEEP);
+    }
+
+    if (currentState == PAIR && HAP.get_homekit_paired_status())
+    {
+        switch_state(CONTROLS);
+    }
+    else if (currentState == CONTROLS && !HAP.get_homekit_paired_status())
+    {
+        switch_state(PAIR);
+    }
+    if (currentState != SLEEP && currentState != DEEP_SLEEP && currentState != LOADING)
+    {
+        if (SYS.get_time() - last_update_time >= refresh_interval)
+        {
+            if (UI.draw_notification("Battery: " + String(SYS.get_battery_level()) + "%"))
+            {
+                last_update_time = SYS.get_time();
+            }
+        }
     }
 }
 
@@ -139,31 +172,22 @@ void setup()
     inactive_time = SYS.get_time();
     last_update_time = SYS.get_time();
 
-    SYS.start_wifi(wifi_ssid, wifiPassword);
+    SYS.start_wifi(wifi_ssid, wifi_password);
 
     HAP.initialize(UI.get_buttons_count());
 
     switch_state(CONTROLS);
 
-    UI.draw_notification(String("Uptime: " + String(SYS.get_time() - last_boot_time) + "s / Battery: " + SYS.get_battery_level() + "%"));
+    UI.draw_notification("Battery: " + String(SYS.get_battery_level()) + "%");
 }
 
 void loop()
 {
     M5.update();
-
-    if (currentState == PAIR && HAP.get_homekit_paired_status())
-    {
-        switch_state(CONTROLS);
-    }
+    update();
 
     if (currentState == CONTROLS)
     {
-
-        if (!HAP.get_homekit_paired_status())
-        {
-            switch_state(PAIR);
-        }
 
         ui_touch_event_t event = UI.get_touch_event();
 
@@ -179,7 +203,6 @@ void loop()
         isAwake = true;
 
         switch_state(CONTROLS);
-        UI.draw_notification(String("Uptime: " + String(SYS.get_time() - last_boot_time) + "s / Battery: " + SYS.get_battery_level() + "%"));
     }
 
     // ------------------------------------------------------------------------------------------------------------
@@ -216,21 +239,5 @@ void loop()
     if (M5.BtnR.isPressed() || M5.BtnP.isPressed() || M5.BtnL.isPressed())
     {
         reset_inactivity_time();
-    }
-
-    if (get_inactivity_time() >= sleep_interval)
-    {
-        Serial.printf("SHOULD SLEEP\n");
-
-        reset_inactivity_time();
-
-        switch_state(DEEP_SLEEP);
-    }
-
-    if (SYS.get_time() - last_update_time >= refresh_interval)
-    {
-        last_update_time = SYS.get_time();
-
-        UI.draw_notification(String("Uptime: " + String(SYS.get_time() - last_boot_time) + "s / Battery: " + SYS.get_battery_level() + "%"));
     }
 }

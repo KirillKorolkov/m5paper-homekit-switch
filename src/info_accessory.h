@@ -22,10 +22,13 @@
  *
  */
 
-#ifndef _INFO_H_
-#define _INFO_H_
+#ifndef _INFO_ACCESSORY_H_
+#define _INFO_ACCESSORY_H_
 
-const char *wifi_ssid = "SSID";
-const char *wifiPassword = "PASS";
+const char *accessory_model_name = "M5Paper HomeKit Switch";
+const char *accessory_manufacturer = "";
+const char *accessory_serial_number = "0";
+const char *accessory_models_type = "ESPHapButton";
+const char *accessory_version = "1.0";
 
 #endif

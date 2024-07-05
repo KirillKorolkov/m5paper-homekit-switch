@@ -22,7 +22,7 @@
  *
  */
 
-#include "system_util.h"
+#include "system_utils.h"
 
 rtc_time_t RTCtime;
 rtc_date_t RTCDate;
@@ -30,11 +30,11 @@ rtc_date_t RTCDate;
 const int battery_voltage_max = 4350;
 const int battery_voltage_min = 3300;
 
-system_util::system_util()
+system_utils::system_utils()
 {
 }
 
-bool system_util::start_wifi(const char *wifi_ssid, const char *wifi_password)
+bool system_utils::start_wifi(const char *wifi_ssid, const char *wifi_password)
 {
     WiFi.mode(WIFI_STA);
     WiFi.disconnect();
@@ -72,17 +72,17 @@ bool system_util::start_wifi(const char *wifi_ssid, const char *wifi_password)
     }
 }
 
-bool system_util::get_wifi_connected_status()
+bool system_utils::get_wifi_connected_status()
 {
     return WiFi.status() == WL_CONNECTED;
 }
 
-String system_util::get_wifi_address()
+String system_utils::get_wifi_address()
 {
     return WiFi.localIP().toString();
 }
 
-int system_util::get_battery_level()
+int system_utils::get_battery_level()
 {
     float voltage = M5.getBatteryVoltage();
     // voltage = max((int)voltage, battery_voltage_max);
@@ -96,17 +96,30 @@ int system_util::get_battery_level()
     return int(charge * 100);
 }
 
-void system_util::reboot()
+void system_utils::reboot()
 {
     Serial.println("reboot");
 
     esp_restart();
 }
 
-void system_util::sleep(void (*wake_up_handler)())
+void system_utils::sleep(void (*wake_up_handler)())
 {
-    // M5.shutdown();
+    Serial.flush();
     Serial.println("before sleep");
+
+    delay(500);
+
+    esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);
+    esp_light_sleep_start();
+
+    Serial.println("after sleep");
+
+    wake_up_handler();
+}
+
+void system_utils::deep_sleep()
+{
     Serial.flush();
 
     M5.update();
@@ -114,31 +127,10 @@ void system_util::sleep(void (*wake_up_handler)())
     delay(500);
 
     esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);
-    esp_sleep_enable_ext0_wakeup(GPIO_NUM_38, LOW);
-    esp_light_sleep_start();
-
-    Serial.println("after sleep");
-
-    M5.update();
-
-    wake_up_handler();
-}
-
-void system_util::deep_sleep()
-{
-    // M5.shutdown();
-    Serial.println("before deep sleep");
-    Serial.flush();
-
-    M5.update();
-
-    delay(500);
-
-    esp_sleep_enable_ext0_wakeup(GPIO_NUM_38, LOW);
     esp_deep_sleep_start();
 }
 
-void system_util::set_time()
+void system_utils::set_time()
 {
     RTCtime.hour = 00;
     RTCtime.min = 00;
@@ -153,7 +145,7 @@ void system_util::set_time()
     M5.RTC.setDate(&RTCDate);
 }
 
-time_t system_util::get_time()
+time_t system_utils::get_time()
 {
     M5.RTC.getTime(&RTCtime);
     M5.RTC.getDate(&RTCDate);
@@ -170,7 +162,7 @@ time_t system_util::get_time()
     return mktime(&currentTime);
 }
 
-bool system_util::take_screenshot(M5EPD_Canvas &canvas, String filename, bool bFull24bpp = true, int x = 0, int y = 0, int w = -1, int h = -1)
+bool system_utils::take_screenshot(M5EPD_Canvas &canvas, String filename, bool bFull24bpp = true, int x = 0, int y = 0, int w = -1, int h = -1)
 {
     delay(500);
 

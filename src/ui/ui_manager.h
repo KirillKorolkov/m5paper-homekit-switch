@@ -32,7 +32,7 @@
 
 #include "../structs.h"
 #include "../hap/hap_manager.h"
-#include "../system/system_util.h"
+#include "../system/system_utils.h"
 
 #include "ui_object.h"
 #include "ui_label.h"
@@ -40,7 +40,7 @@
 class ui_manager
 {
 public:
-    ui_manager(system_util *SYS, hap_manager *HAP);
+    ui_manager(system_utils *SYS, hap_manager *HAP);
 
     void initialize();
 
@@ -50,10 +50,10 @@ public:
 
     int get_buttons_count();
 
-    void draw_notification(String text);
+    bool draw_notification(String text);
 
 private:
-    system_util *SYS_;
+    system_utils *SYS_;
     hap_manager *HAP_;
 
     std::vector<ui_object> buttons_;

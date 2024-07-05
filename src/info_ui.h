@@ -22,38 +22,12 @@
  *
  */
 
-#ifndef _SYSTEM_UTIL_H_
-#define _SYSTEM_UTIL_H_
+#ifndef _INFO_UI_H_
+#define _INFO_UI_H_
 
-#include <M5EPD.h>
-#include <WiFi.h>
-#include <FS.h>
-#include <SPIFFS.h>
-
-#include "../structs.h"
-
-class system_util
-{
-public:
-    system_util();
-
-    bool start_wifi(const char *wifi_ssid, const char *wifi_password);
-
-    bool get_wifi_connected_status();
-    String get_wifi_address();
-
-    int get_battery_level();
-
-    void reboot();
-    void sleep(void (*wake_up_handler)());
-    void deep_sleep();
-
-    void set_time();
-    time_t get_time();
-
-    bool take_screenshot(M5EPD_Canvas &canvas, String filename, bool bFull24bpp, int xPos, int yPos, int xSize, int ySize);
-
-private:
-};
+const char *switch_1_label = "Switch 1";
+const char *switch_2_label = "Switch 2";
+const char *switch_3_label = "Switch 3";
+const char *switch_4_label = "Switch 4";
 
 #endif

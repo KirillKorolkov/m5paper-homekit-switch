@@ -1,6 +1,6 @@
 #include "hap_manager.h"
 
-#include "../assembly_info.h"
+#include "../info_accessory.h"
 
 hap_manager::hap_manager()
 {
@@ -16,7 +16,7 @@ void hap_manager::initialize(int button_num, bool reset)
     // Our accessory type is programmable switch , apple interface will proper show that
     hap_setbase_accessorytype(homekit_accessory_category_programmable_switch);
     // init base properties
-    hap_initbase_accessory_service(user_setting_model_name, user_setting_manufacturer, user_setting_serial_number, user_setting_models_type, user_setting_version);
+    hap_initbase_accessory_service(accessory_model_name, accessory_manufacturer, accessory_serial_number, accessory_models_type, accessory_version);
 
     buttons_count_ = button_num;
 
